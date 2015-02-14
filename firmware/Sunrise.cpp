@@ -1,4 +1,4 @@
-#include "Sunrise/Sunrise.h"
+#include "Sunrise.h"
 #include "math.h"
 
 Sunrise::Sunrise(float latitude, float longitude, float timezone){
