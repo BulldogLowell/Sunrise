@@ -1,0 +1,7 @@
+{
+  "name": "SunriseSunset",
+  "author": "Jim Brower <bulldoglowell@gmail.com>",
+  "license": "GNU",
+  "version": "0.1.0",
+  "description": "Sunrise/Sunset Time ported for Spark Core"
+}
