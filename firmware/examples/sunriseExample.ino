@@ -6,7 +6,7 @@
  http://www.swfltek.com/arduino/sunrise
  */
 #include "application.h"
-#include "Sunrise.h"
+#include "Sunrise/Sunrise.h"
 #include "math.h"
 
 // create a Sunrise object
