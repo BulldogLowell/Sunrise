@@ -1,6 +1,6 @@
 # Sunrise
-Sunrise library for Spark Core
+Sunrise library for Particle Devices
 
 returns Sunrise, Sunset and Solar Noon times for Particle Devices
 
-see example
+see example for in-code documentation
