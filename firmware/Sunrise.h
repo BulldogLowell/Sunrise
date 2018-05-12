@@ -35,10 +35,12 @@ class Sunrise{
   public:
     Sunrise(double latitude, double longitude, Twilight tl = ACTUAL);
     void setTwilight(Twilight tl);
+    Twilight getTwilight(void);
     void updateSolarTimes(void);
     void updateSolarTimes(Twilight tl);
     bool isDay(void);
     bool isDay(Twilight tl);
+    bool isDay(Twilight riseTwilight, Twilight setTwilight);
     bool isNight(void);
     bool isNight(Twilight tl);
     uint8_t& sunRiseHour = _sun_rise.hour;
@@ -50,4 +52,5 @@ class Sunrise{
 };
 
 #endif
+
 
