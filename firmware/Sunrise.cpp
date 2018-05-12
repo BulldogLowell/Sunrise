@@ -11,8 +11,13 @@ Sunrise::Sunrise(double latitude, double longitude, Twilight tl) {
   _sun_set.rs = 0;
 }
 
+Twilight Sunrise::getTwilight(void) {
+  return _twilight;
+}
+
 void Sunrise::setTwilight(Twilight twilight) {
-  switch (twilight) {
+  _twilight = twilight;
+  switch (_twilight) {
     case ACTUAL:
       _zenith = 1.579522973054868;
       break;
@@ -120,11 +125,11 @@ bool Sunrise::isDay(void) {
   time_t now_time = tmConvert_t(Time.year(), Time.month(), Time.day(), Time.hour(), Time.minute(), Time.second());
   time_t rise_time = tmConvert_t(Time.year(), Time.month(), Time.day(), _sun_rise.hour, _sun_rise.minute, 0);
   time_t set_time = tmConvert_t(Time.year(), Time.month(), Time.day(), _sun_set.hour, _sun_set.minute, 0);
-  // this is being done to acomodate UTC 
+  // this is being done to acomodate UTC
   if (rise_time < set_time) {
-    return (now_time > rise_time && now_time < set_time);
+    return (now_time > rise_time and now_time < set_time);
   } else if (set_time < rise_time) {
-    return (now_time > rise_time || now_time < set_time);
+    return (now_time > rise_time or now_time < set_time);
   }
   return false;
 }
@@ -137,6 +142,12 @@ bool Sunrise::isDay(Twilight tl) {
   setTwilight(_twilight);
   return result;
 }
+
+// bool isDay(Twilight riseTwilight, Twilight setTwilight) {
+//   bool riseDay = isDay(riseTwilight);
+//   bool setDay = isDay(setTwilight);
+//   return false;
+// }
 
 bool Sunrise::isNight(void) {
   return !isDay();
@@ -157,3 +168,4 @@ time_t Sunrise::tmConvert_t(uint16_t YYYY, uint8_t MM, uint8_t DD, uint8_t hh, u
   time_t t_of_day = mktime(&t);
   return t_of_day;
 }
+
