@@ -55,6 +55,7 @@ void updateDST(void);
 void printSolarTimes(void);
 bool IsDST(int dayOfMonth, int month, int dayOfWeek);
 void manageLED(void);
+int handleTwilightChange(String command);
 //****************** end function declarations ******************//
 
 MillisIntervalCallback syncronizeRTC([&](){Particle.syncTime();});
@@ -83,13 +84,17 @@ char nauticalSunset[6] = "N/A";
 char astronomicalSunrise[6] = "N/A";
 char astronomicalSunset[6] = "N/A";
 char daytimeStr[6] = "N/A";
+char twilightStr[16] = "N/A";
 
 double currentOffset = -99.0;
 char daylightSavingsStr[6] = "FALSE";
 
+Twilight ledTwilight = ACTUAL;
+
 void setup() {
   Serial.begin(9600);
   pinMode(D7, OUTPUT);
+
   Particle.variable("time", currentTime);
   Particle.variable("ActualRise", sunrise);
   Particle.variable("SolarNoon", noon);
@@ -103,19 +108,25 @@ void setup() {
   Particle.variable("DST", daylightSavingsStr);
   Particle.variable("Offset", currentOffset);
   Particle.variable("IsDaytime", daytimeStr);
+  Particle.variable("Twilight", twilightStr);
+
+  Particle.function("SetTwilight", handleTwilightChange);
+
+  EEPROM.get(0, ledTwilight);
   waitFor(Time.isValid, SECONDS_TO_MILLIS(15));
   // princeton.setTwilight(ACTUAL);  // optional setter
   Time.zone(-5);
   dstCheck(NULL, true);
   timeCheck(NULL, true);
   solarTimeCheck(NULL, true);
+  ledCheck(NULL, true);
 }
 
 void loop() {
   dstCheck(SECONDS_TO_MILLIS(3600));
   timeCheck(SECONDS_TO_MILLIS(1));
-  solarTimeCheck(SECONDS_TO_MILLIS(3600));
-  printTimes(SECONDS_TO_MILLIS(5));
+  solarTimeCheck(SECONDS_TO_MILLIS(1));
+  printTimes(SECONDS_TO_MILLIS(30));
   syncronizeRTC(SECONDS_TO_MILLIS(3600 * 4));
   ledCheck(SECONDS_TO_MILLIS(1));
 }
@@ -123,24 +134,65 @@ void loop() {
 void manageLED(void) {
   static bool lastDayCheck = false;
   static bool startup = true;
-  bool nowDayCheck = princeton.isDay(CIVIL);  // passing argument means isDay() includes CIVIL twilight
+  bool nowDayCheck = princeton.isDay(ledTwilight);  // passing argument means isDay() includes passed Twilight
   if (lastDayCheck != nowDayCheck or startup) {
     startup = false;
+    char pubString[64] = "";
     if (nowDayCheck) {
       digitalWrite(D7, LOW);
       strcpy(daytimeStr, "TRUE");
+      sprintf(pubString, "Sunrise: LED is off at %02d:%02d", Time.hour(), Time.minute());
+      Particle.publish("pushover", pubString);
     } else {
       digitalWrite(D7, HIGH);
       strcpy(daytimeStr, "FALSE");
+      sprintf(pubString, "Sunset: LED is on at %02d:%02d", Time.hour(), Time.minute());
+      Particle.publish("pushover", pubString);
     }
     lastDayCheck = nowDayCheck;
   }
+}
+
+int handleTwilightChange(String command) {
+  if (command == "ACTUAL") {
+    ledTwilight = ACTUAL;
+    EEPROM.put(0, ledTwilight);
+    return static_cast<int>(ACTUAL);
+  } else if (command == "CIVIL") {
+    ledTwilight = CIVIL;
+    EEPROM.put(0, ledTwilight);
+    return static_cast<int>(CIVIL);
+  } else if (command == "NAUTICAL") {
+    ledTwilight = NAUTICAL;
+    EEPROM.put(0, ledTwilight);
+    return static_cast<int>(NAUTICAL);
+  } else if (command == "ASTRONOMICAL") {
+    ledTwilight = ASTRONOMICAL;
+    EEPROM.put(0, ledTwilight);
+    return static_cast<int>(ASTRONOMICAL);
+  }
+  return -1;
 }
 
 void updateTime(void) {
   currentOffset = (Time.local() - Time.now()) / 3600.0;  // debug to make sure that DST offset is correct
   Serial.printf("Current Time:%02d:%02d\n",Time.hour(), Time.minute());
   sprintf(currentTime, "%02d:%02d", Time.hour(), Time.minute());
+  char currentTwilight[16] = "";
+  switch (ledTwilight) {
+    case ACTUAL:
+      sprintf(twilightStr,"ACTUAL");
+      break;
+    case CIVIL:
+      sprintf(twilightStr, "CIVIL");
+      break;
+    case NAUTICAL:
+      sprintf(twilightStr, "NAUTICAL");
+      break;
+    case ASTRONOMICAL:
+      sprintf(twilightStr,"ASTRONOMICAL");
+      break;
+  }
 }
 
 void updateSolarTimes(void) {
@@ -160,19 +212,24 @@ void updateSolarTimes(void) {
   princeton.updateSolarTimes(ASTRONOMICAL);
   sprintf(astronomicalSunrise, "%02d:%02d", princeton.sunRiseHour, princeton.sunRiseMinute);
   sprintf(astronomicalSunset, "%02d:%02d", princeton.sunSetHour, princeton.sunSetMinute);
+
 }
 
 void printSolarTimes(void) {
+  princeton.updateSolarTimes();
   Serial.printf("Actual Sunrise:\t%02d:%02d\n", princeton.sunRiseHour, princeton.sunRiseMinute);
   Serial.printf("Actual Solar Noon:\t%02d:%02d\n", princeton.solarNoonHour, princeton.solarNoonMinute);
   Serial.printf("Actual Sunset:\t%02d:%02d\n\n", princeton.sunSetHour, princeton.sunSetMinute);
 
+  princeton.updateSolarTimes(CIVIL);
   Serial.printf("Civil Sunrise:\t%02d:%02d\n", princeton.sunRiseHour, princeton.sunRiseMinute);
   Serial.printf("Civil Sunset:\t%02d:%02d\n\n", princeton.sunSetHour, princeton.sunSetMinute);
 
+  princeton.updateSolarTimes(NAUTICAL);
   Serial.printf("Nautical Sunrise:\t%02d:%02d\n", princeton.sunRiseHour, princeton.sunRiseMinute);
   Serial.printf("Nautical Sunset:\t%02d:%02d\n\n", princeton.sunSetHour, princeton.sunSetMinute);
 
+  princeton.updateSolarTimes(ASTRONOMICAL);
   Serial.printf("Astronomical Sunrise:\t%02d:%02d\n", princeton.sunRiseHour, princeton.sunRiseMinute);
   Serial.printf("Astronomical Sunset:\t%02d:%02d\n\n", princeton.sunSetHour, princeton.sunSetMinute);
 }
@@ -206,3 +263,4 @@ bool IsDST(int dayOfMonth, int month, int dayOfWeek)  // US Algorithm
   }
   return previousSunday <= 0;
 }
+
