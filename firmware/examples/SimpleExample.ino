@@ -1,7 +1,7 @@
 /*
   Sunrise Library
   Adapted for Particle Devices May - 2018
-  Copyright(c) 2018
+  Copyright May, 2018
   Jim Brower
   bulloglowell@gmail.com
 
@@ -15,10 +15,13 @@
   https://en.wikipedia.org/wiki/Twilight
 
   check your times here:
+  https://sunrise-sunset.org
+  or as this example:
   https://sunrise-sunset.org/us/princeton-nj
 
-  Derived From:
+  Originally Derived From:
   http://www.swfltek.com/arduino/sunrise
+  (but seems to now be defunct...)
 */
 
 #include "Sunrise.h"
@@ -34,18 +37,28 @@ Sunrise princeton(40.3571, -74.6702);  // ACTUAL is default
 
 void setup() {
   Serial.begin(9600);
-  Time.zone(-4); // summer(optional) NOTE:   Works in UTC time as well
+  pinMode(D7, OUTPUT);
+  Time.zone(-4); // summer but this library works in UTC time as well!
   // princeton.setTwilight(ACTUAL);  // optional setter
 }
 
 void loop() {
-  [](){  // run every 10 seconds
-    static uint32_t lastMillis = 0;
-    if (millis() - lastMillis > 10000UL) {
-      lastMillis = millis();
-      printSolarTimes();
+  static uint32_t lastMillis = 0;
+  if (millis() - lastMillis > 10000) {
+    lastMillis = millis();
+    printSolarTimes();
+  }
+
+  static int lastCivilDayStatus = -1;
+  int civilDayStatus = princeton.isDay(CIVIL)? 1 : 0;
+  if (civilDayStatus != lastCivilDayStatus) {
+    if(civilDayStatus == 1) {
+      digitalWrite(D7, LOW);
+    } else {
+      digitalWrite(D7, HIGH);
     }
-  }();
+    lastCivilDayStatus = civilDayStatus;
+  }
 }
 
 void printSolarTimes(void) {
