@@ -32,6 +32,7 @@ class Sunrise{
     }
     time_t tmConvert_t(uint16_t YYYY, uint8_t MM, uint8_t DD, uint8_t hh, uint8_t mm, uint8_t ss);
 
+
   public:
     Sunrise(double latitude, double longitude, Twilight tl = ACTUAL);
     void setTwilight(Twilight tl);
@@ -52,5 +53,3 @@ class Sunrise{
 };
 
 #endif
-
-
