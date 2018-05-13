@@ -34,7 +34,7 @@ Sunrise princeton(40.3571, -74.6702);  // ACTUAL is default
 
 void setup() {
   Serial.begin(9600);
-  Time.zone(-4); // summer
+  Time.zone(-4); // summer(optional) NOTE:   Works in UTC time as well
   // princeton.setTwilight(ACTUAL);  // optional setter
 }
 
