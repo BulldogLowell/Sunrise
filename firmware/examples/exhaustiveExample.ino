@@ -34,13 +34,19 @@ class MillisIntervalCallback {
     MillisIntervalCallback(funcPtr func){
       _callback = func;
     }
-    void operator () (uint32_t interval, bool force = false) {
-      if (millis() - _lastMillis > interval or force) {
+    void operator () (uint32_t interval) {
+      if (millis() - _lastMillis > interval) {
         if (_callback) {
           _callback();
         }
         _lastMillis = millis();
       }
+    }
+    void operator ()() {
+      if (_callback) {
+        _callback();
+      }
+      _lastMillis = millis();
     }
   private:
     funcPtr _callback;
@@ -49,8 +55,8 @@ class MillisIntervalCallback {
 //******************** end utility functions ********************//
 
 //******************** function declarations ********************//
-void updateTime(void);
-void updateSolarTimes(void);
+void updateLocalTime(void);
+void updateSolarVariables(void);
 void updateDST(void);
 void printSolarTimes(void);
 bool IsDST(int dayOfMonth, int month, int dayOfWeek);
@@ -59,9 +65,9 @@ int handleTwilightChange(String command);
 //****************** end function declarations ******************//
 
 MillisIntervalCallback syncronizeRTC([&](){Particle.syncTime();});
-MillisIntervalCallback timeCheck(updateTime);
+MillisIntervalCallback timeCheck(updateLocalTime);
 MillisIntervalCallback dstCheck(updateDST);
-MillisIntervalCallback solarTimeCheck(updateSolarTimes);
+MillisIntervalCallback solarTimeCheck(updateSolarVariables);
 MillisIntervalCallback printTimes(printSolarTimes);
 MillisIntervalCallback ledCheck(manageLED);
 
@@ -116,19 +122,19 @@ void setup() {
   waitFor(Time.isValid, SECONDS_TO_MILLIS(15));
   // princeton.setTwilight(ACTUAL);  // optional setter
   Time.zone(-5);
-  dstCheck(NULL, true);
-  timeCheck(NULL, true);
-  solarTimeCheck(NULL, true);
-  ledCheck(NULL, true);
+  dstCheck();
+  timeCheck();
+  solarTimeCheck();
+  ledCheck();
 }
 
 void loop() {
-  dstCheck(SECONDS_TO_MILLIS(3600));
-  timeCheck(SECONDS_TO_MILLIS(1));
-  solarTimeCheck(SECONDS_TO_MILLIS(1));
-  printTimes(SECONDS_TO_MILLIS(30));
-  syncronizeRTC(SECONDS_TO_MILLIS(3600 * 4));
-  ledCheck(SECONDS_TO_MILLIS(1));
+  timeCheck(SECONDS_TO_MILLIS(1));            // every second
+  solarTimeCheck(SECONDS_TO_MILLIS(1));       // every second
+  ledCheck(SECONDS_TO_MILLIS(1));             // every second
+  printTimes(SECONDS_TO_MILLIS(10));          // every 10 seconds
+  dstCheck(SECONDS_TO_MILLIS(3600));          // once an hour
+  syncronizeRTC(SECONDS_TO_MILLIS(3600 * 4)); //every few hours
 }
 
 void manageLED(void) {
@@ -174,7 +180,7 @@ int handleTwilightChange(String command) {
   return -1;
 }
 
-void updateTime(void) {
+void updateLocalTime(void) {
   currentOffset = (Time.local() - Time.now()) / 3600.0;  // debug to make sure that DST offset is correct
   Serial.printf("Current Time:%02d:%02d\n",Time.hour(), Time.minute());
   sprintf(currentTime, "%02d:%02d", Time.hour(), Time.minute());
@@ -195,7 +201,7 @@ void updateTime(void) {
   }
 }
 
-void updateSolarTimes(void) {
+void updateSolarVariables(void) {
   princeton.updateSolarTimes();  // default as in your constructor or setter
   sprintf(sunrise, "%02d:%02d", princeton.sunRiseHour, princeton.sunRiseMinute);
   sprintf(noon, "%02d:%02d", princeton.solarNoonHour, princeton.solarNoonMinute);
@@ -212,11 +218,10 @@ void updateSolarTimes(void) {
   princeton.updateSolarTimes(ASTRONOMICAL);
   sprintf(astronomicalSunrise, "%02d:%02d", princeton.sunRiseHour, princeton.sunRiseMinute);
   sprintf(astronomicalSunset, "%02d:%02d", princeton.sunSetHour, princeton.sunSetMinute);
-
 }
 
 void printSolarTimes(void) {
-  princeton.updateSolarTimes();
+  princeton.updateSolarTimes(ACTUAL);
   Serial.printf("Actual Sunrise:\t%02d:%02d\n", princeton.sunRiseHour, princeton.sunRiseMinute);
   Serial.printf("Actual Solar Noon:\t%02d:%02d\n", princeton.solarNoonHour, princeton.solarNoonMinute);
   Serial.printf("Actual Sunset:\t%02d:%02d\n\n", princeton.sunSetHour, princeton.sunSetMinute);
@@ -263,4 +268,3 @@ bool IsDST(int dayOfMonth, int month, int dayOfWeek)  // US Algorithm
   }
   return previousSunday <= 0;
 }
-
