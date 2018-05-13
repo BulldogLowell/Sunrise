@@ -43,8 +43,7 @@ void Sunrise::updateSolarTimes(Twilight tl) {
   Twilight savedTwilight = _twilight;
   setTwilight(tl);
   updateSolarTimes();
-  _twilight = savedTwilight;
-  setTwilight(_twilight);
+  setTwilight(savedTwilight);
 }
 
 int Sunrise::Compute(unsigned char  month, unsigned char  day, SunriseTime& eventTime) {
@@ -122,6 +121,7 @@ int Sunrise::Compute(unsigned char  month, unsigned char  day, SunriseTime& even
 }
 
 bool Sunrise::isDay(void) {
+  updateSolarTimes();
   time_t now_time = tmConvert_t(Time.year(), Time.month(), Time.day(), Time.hour(), Time.minute(), Time.second());
   time_t rise_time = tmConvert_t(Time.year(), Time.month(), Time.day(), _sun_rise.hour, _sun_rise.minute, 0);
   time_t set_time = tmConvert_t(Time.year(), Time.month(), Time.day(), _sun_set.hour, _sun_set.minute, 0);
@@ -168,4 +168,3 @@ time_t Sunrise::tmConvert_t(uint16_t YYYY, uint8_t MM, uint8_t DD, uint8_t hh, u
   time_t t_of_day = mktime(&t);
   return t_of_day;
 }
-
