@@ -1,3 +1,26 @@
+/*
+  Sunrise Library
+  Adapted for Particle Devices May - 2018
+  Copyright(c) 2018
+  Jim Brower
+  bulloglowell@gmail.com
+
+  Twilight definitions:
+  ACTUAL is the moment the Sun sets completely below the horizon
+  CIVIL is the moment that the center of the sun is 6° below the horizon
+  NAUTICAL is the moment that the center of the sun is 12° below the horizon
+  ASTRONOMICAL is the moment that the center of the sun is 18° below the horizon
+
+  for more on CIVIL, NAUTICAL and ASTRONOMICAL twilight, see the following:
+  https://en.wikipedia.org/wiki/Twilight
+
+  check your times here:
+  https://sunrise-sunset.org/us/princeton-nj
+
+  Derived From:
+  http://www.swfltek.com/arduino/sunrise
+*/
+
 #ifndef Sunrise_h
 #define Sunrise_h
 
